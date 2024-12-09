@@ -255,6 +255,7 @@
       unlockDesc: "Unsupervised TSD requires owning at least 2 cars",
       dayTemplate: "Day {day}",
       chartTitle: "Daily Cash Flow",
+      minDownPaymentMsg: "Minimum down payment is 30% of the car price.",
     },
     cn: {
       appTitle: "机器人出租车模拟器 - 全自动驾驶",
@@ -338,6 +339,7 @@
       unlockDesc: "无监督TSD需要拥有至少2辆车",
       dayTemplate: "第{day}天",
       chartTitle: "每日现金流",
+      minDownPaymentMsg: "首付最低为车价的30%。",
     }
   };
 
@@ -367,7 +369,7 @@
   };
 
   CONFIG.fleetModels.forEach(m => {
-    m.dailyIncome = m.cost * 0.0208; 
+    m.dailyIncome = m.cost * 0.0104;
   });
 
   // Load saved state from localStorage
@@ -901,8 +903,12 @@
   function updateFinanceDisplay() {
     const model = getSelectedModel();
     if(model) {
+      const minDownPayment = model.cost * 0.3; // Changed from 0.1 to 0.3 for 30% minimum down payment
+      downPaymentRange.min = minDownPayment;  
       downPaymentRange.max = model.cost;
-      let downPayment = parseFloat(downPaymentRange.value) || 0;
+      
+      let downPayment = Math.max(minDownPayment, parseFloat(downPaymentRange.value) || 0);
+      downPaymentRange.value = downPayment;
       let termDays = parseInt(loanTermRange.value);
 
       let financed = Math.max(0, model.cost - downPayment);
@@ -912,10 +918,8 @@
       }
 
       dailyCostDisplay.textContent = "$" + dailyPayment.toFixed(2);
-
       let hourlyRate = (model.dailyIncome / CONFIG.carDailyHours);
       dailyEarningDisplay.textContent = "$" + hourlyRate.toFixed(2);
-
       fullPriceDisplay.textContent = "$" + model.cost.toFixed(2);
       downPaymentValue.textContent = downPayment.toFixed(2);
     } else {
@@ -948,6 +952,13 @@
     }
 
     let downPayment = parseFloat(downPaymentRange.value) || 0;
+    const minDownPayment = model.cost * 0.3; // Changed from 0.1 to 0.3 for 30% minimum down payment
+    
+    if(downPayment < minDownPayment) {
+      logMessage('minDownPaymentMsg',"❌");
+      return;
+    }
+
     let termDays = parseInt(loanTermRange.value);
     if(downPayment > cash) {
       logMessage('noCashForDownMsg',"❌");
