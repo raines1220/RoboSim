@@ -457,6 +457,15 @@
     }
   });
 
+  // Add this function to trim the chart data
+  function trimChartData() {
+    const MAX_DAYS = 30;
+    if (cashflowData.labels.length > MAX_DAYS) {
+      cashflowData.labels = cashflowData.labels.slice(-MAX_DAYS);
+      cashflowData.datasets[0].data = cashflowData.datasets[0].data.slice(-MAX_DAYS);
+    }
+  }
+
   function saveState() {
     const state = {
       currentLang,
@@ -829,6 +838,20 @@
   }
 
   endDayBtn.addEventListener('click', function(){
+    // Add check for unsupervised taxis with remaining hours
+    const hasIdleUnsupervisedTaxis = cars.some(car => 
+      car.tsdLevel === 2 && car.carHoursLeft > 0
+    );
+
+    if (hasIdleUnsupervisedTaxis) {
+      const confirmMsg = currentLang === 'cn' 
+        ? "您还有未使用的无人驾驶出租车。确定要结束今天吗？"
+        : "You have unused unsupervised taxis. Are you sure you want to end the day?";
+      if (!confirm(confirmMsg)) {
+        return;
+      }
+    }
+
     let expense = getTotalDailyExpense();
     cash -= expense;
 
@@ -837,6 +860,7 @@
 
     cashflowData.labels.push('Day ' + (day + 1));
     cashflowData.datasets[0].data.push(dailyCashFlow);
+    trimChartData();
     cashflowChart.update();
 
     cars.forEach(car=>{
