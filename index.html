@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Robotaxi Simulator - Totally Self-Driving</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<header>
+  <h1>
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <path d="M21,11l-2-7H5L3,11H2c0,0.5,0.4,1,1,1h1l-0.3,1.1C3.3,13.4,3,13.9,3,14.5V20c0,0.6,0.4,1,1,1h1
+        c0.6,0,1-0.4,1-1v-1h12v1c0,0.6,0.4,1,1,1h1c0.6,0,1-0.4,1-1v-5.5c0-0.6-0.3-1.1-0.7-1.4L20,12h1c0.6,0,1-0.5,1-1H21z M6.8,6h10.4
+        l1.4,5H5.4L6.8,6z M7,16c-0.8,0-1.5-0.7-1.5-1.5S6.2,13,7,13s1.5,0.7,1.5,1.5S7.8,16,7,16z M17,16c-0.8,0-1.5-0.7-1.5-1.5
+        S16.2,13,17,13s1.5,0.7,1.5,1.5S17.8,16,17,16z"/>
+      <path d="M9,8.5h6c0.3,0,0.5-0.2,0.5-0.5S15.3,7.5,15,7.5H9C8.7,7.5,8.5,7.7,8.5,8S8.7,8.5,9,8.5z"/>
+    </svg>
+    <span data-i18n="appTitle">Robotaxi Simulator - Totally Self-Driving</span>
+  </h1>
+  <div class="lang-toggle-container">
+    <span class="lang-label">EN</span>
+    <div class="lang-toggle" id="langToggle"></div>
+    <span class="lang-label">CN</span>
+    <button id="resetBtn" style="margin-left:10px; background:#ff6b6b;">Reset</button>
+  </div>
+</header>
+
+<main>
+  <div id="gameOverMsg" data-i18n="gameOverMsg">Game Over! You went broke. Refresh to start over.</div>
+
+  <div class="dashboard-container">
+    <div class="log-bar-container">
+      <div id="log"></div>
+    </div>
+    <div class="chart-container">
+      <canvas id="cashflowChart"></canvas>
+    </div>
+  </div>
+
+  <div class="stats-cards">
+    <div class="stat-card">
+      <h3 data-i18n="dayLabel">Day</h3>
+      <div class="stat-value" id="day">1</div>
+    </div>
+    <div class="stat-card">
+      <h3 data-i18n="cashLabel">Cash</h3>
+      <div class="stat-value" id="cash">0</div>
+    </div>
+    <div class="stat-card">
+      <h3 data-i18n="dailyExpenseLabel">Daily Expense</h3>
+      <div class="stat-value" id="dailyExpense">100</div>
+    </div>
+    <div class="stat-card">
+      <h3 data-i18n="playerHoursLabel">Player Hours Left</h3>
+      <div class="stat-value" id="playerHours">8</div>
+    </div>
+    <div class="stat-card">
+      <h3 data-i18n="carsOwnedLabel">Cars Owned</h3>
+      <div class="stat-value" id="numCars">0</div>
+    </div>
+  </div>
+
+  <div class="panels-container">
+    <div class="panel">
+      <div class="cars-header">
+        <div class="section-title" data-i18n="yourCars">Your Cars</div>
+        <div class="cars-header-buttons">
+          <button id="driveUnsupervisedBtn" style="display:none;" data-i18n="driveUnsupervisedBtn">Drive Unsupervised Fleet</button>
+          <button id="endDayBtn" data-i18n="endDayBtn">⏭ End Day</button>
+        </div>
+      </div>
+      <div class="table-container">
+        <table id="car-list">
+          <thead>
+            <tr>
+              <th data-i18n="tableID">ID</th>
+              <th data-i18n="tableCar">Car</th>
+              <th data-i18n="tableHourRate">$/hr</th>
+              <th data-i18n="tableTSD">TSD</th>
+              <th data-i18n="tableCarHours">Car H</th>
+              <th data-i18n="tableDriveHours">Drive H</th>
+              <th data-i18n="tableCarActions">Car Actions</th>
+              <th data-i18n="tableTSDActions">TSD Actions</th>
+            </tr>
+          </thead>
+          <tbody id="car-list-body"></tbody>
+        </table>
+        
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="purchase-header">
+        <div class="section-title" data-i18n="buyMoreCars">Buy More Cars</div>
+      </div>
+      <div class="merged-row">
+        <div class="purchase-row-item">
+          <label data-i18n="selectModel">Select Model:</label>
+          <select id="fleetModelSelect"></select>
+        </div>
+        <div class="purchase-row-item">
+          <label data-i18n="downPayment">Down Payment:</label>
+          <input type="range" id="downPaymentRange" min="0" value="0" step="100" data-i18n="downPayment">
+          $<span id="downPaymentValue">0</span>
+        </div>
+        <div class="purchase-row-item">
+          <label data-i18n="loanTerm">Loan Term (Days):</label>
+          <input type="range" id="loanTermRange" min="30" max="120" value="30" step="1" data-i18n="loanTerm">
+          <span id="loanTermValue">30</span> days
+        </div>
+      </div>
+      
+      <div class="merged-row">
+        <div class="purchase-row-item">
+          <label data-i18n="fullPrice">Full Price:</label> 
+          <span id="fullPriceDisplay">$0</span>
+        </div>
+        <div class="purchase-row-item">
+          <label data-i18n="hourlyEarning">Est. Hourly Earning:</label> 
+          <span id="dailyEarningDisplay">$0</span>
+        </div>
+        <div class="purchase-row-item">
+          <label data-i18n="dailyCost">Daily Cost (APR 120%):</label> 
+          <span id="dailyCostDisplay">$0</span>
+        </div>
+      </div>
+      
+      <div class="purchase-action">
+        <button id="buyFleetBtn" data-i18n="buySelectedModel">Buy Selected Model</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title" data-i18n="instructionsTitle">Instructions & TSD Info</div>
+      <div class="instructions-grid">
+        <div class="instruction-card">
+          <div class="instruction-icon">🚗</div>
+          <h4 data-i18n="noTSDTitle">No TSD</h4>
+          <p data-i18n="noTSDDesc">1h drive = 1h player time</p>
+        </div>
+        <div class="instruction-card">
+          <div class="instruction-icon">👀</div>
+          <h4 data-i18n="supervisedTitle">TSD (Supervised)</h4>
+          <p data-i18n="supervisedDesc">1h drive = 0.5h player time</p>
+        </div>
+        <div class="instruction-card">
+          <div class="instruction-icon">🤖</div>
+          <h4 data-i18n="unsupervisedTitle">TSD (Unsupervised)</h4>
+          <p data-i18n="unsupervisedDesc">1h drive = 0h player time</p>
+        </div>
+        <div class="instruction-card">
+          <div class="instruction-icon">🔓</div>
+          <h4 data-i18n="unlockTitle">Unlock Requirements</h4>
+          <p data-i18n="unlockDesc">Unsupervised TSD requires owning at least 2 cars</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function(){
+
+  const LANG_STRINGS = {
+    en: {
+      appTitle: "Robotaxi Simulator - Totally Self-Driving",
+      gameOverMsg: "Game Over! You went broke. Refresh to start over.",
+      dayLabel: "Date",
+      cashLabel: "Cash:",
+      dailyExpenseLabel: "Daily Expense:",
+      playerHoursLabel: "Player Hours Left:",
+      carsOwnedLabel: "Cars Owned:",
+      paymentCycle: "Financing is paid daily. Once fully paid off, daily expense reduces.",
+      endDayBtn: "⏭ End Day",
+      yourCars: "Your Cars",
+      tableID: "ID",
+      tableCar: "Car",
+      tableHourRate: "$/hr",
+      tableTSD: "TSD",
+      tableCarHours: "Car H",
+      tableDriveHours: "Drive H",
+      tableDriveAction: "Drive",
+      tableCarActions: "Car Actions",
+      tableTSDActions: "TSD Actions",
+      tableSell: "Sell",
+      instructionsTitle: "Instructions & TSD Info",
+      instructionsDesc: "Each car can have its own TSD level:",
+      noTSD: "No TSD:",
+      noTSDDesc: "1h drive = 1h player time",
+      supervisedTSD: "TSD (Supervised):",
+      supervisedTSDDesc: "1h drive = 0.5h player time (round up)",
+      unsupervisedTSD: "TSD (Unsupervised):",
+      unsupervisedTSDDesc: "1h drive = 0h player time",
+      costsPerCar: "Costs per car for TSD upgrades:",
+      supervisedCost: "Supervised: Subscribe($3.33/day) or Buyout($8000)",
+      unsupervisedCost: "Unsupervised: Subscribe($10/day) or Buyout($24000)",
+      noReq: "No requirement to have Supervised before Unsupervised. Manage your cars wisely and try not to go broke!",
+      buyMoreCars: "Buy More Cars",
+      selectModel: "Select Model:",
+      fullPrice: "Full Price:",
+      downPayment: "Down Payment:",
+      loanTerm: "Loan Term (Days):",
+      dailyCost: "Daily Cost (APR 120%):",
+      hourlyEarning: "Est. Hourly Earning:",
+      buySelectedModel: "Buy Selected Model",
+      tsdNone: "None",
+      tsdSupervised: "Supervised",
+      tsdUnsupervised: "Unsupervised",
+
+      subSupBtn: "Sub Sup(3.33/d)",
+      buySupBtn: "Buy Sup($8000)",
+      subUnSupBtn: "Sub UnSup($10/d)",
+      buyUnSupBtn: "Buy UnSup($24000)",
+
+      welcomeMsg: "Welcome to Robotaxi Simulator! 🚀 Manage your TSD per car and buy more cars!",
+      startCarMsg: "You start with a free Type Y taxi!",
+      invalidHoursMsg: "Invalid number of hours.",
+      notEnoughPlayerHoursMsg: "Not enough player hours left.",
+      driveCarMsg: "Drove {hours}h with {model} (#{id}, {tsd}), earned ${earnings}",
+      monthlyFeeMsg: "Subscription fees of ${amount} charged.",
+      brokeMsg: "You went broke! Game Over.",
+      dayEndedMsg: "Day ended. After expenses, you have ${cash}. Moving to Day {day}.",
+      subscribedSupMsg: "Car #{id}: TSD (Supervised) subscribed! ($3.33/day)",
+      boughtSupMsg: "Car #{id}: TSD (Supervised) bought out ($8000)!",
+      subscribedUnSupMsg: "Car #{id}: TSD (Unsupervised) subscribed! ($10/day)",
+      boughtUnSupMsg: "Car #{id}: TSD (Unsupervised) bought out ($24000)!",
+      cannotSubSupMsg: "Cannot subscribe TSD (Supervised) for this car.",
+      cannotBuySupMsg: "Cannot buy TSD (Supervised) for this car.",
+      cannotSubUnSupMsg: "Cannot subscribe TSD (Unsupervised) for this car.",
+      cannotBuyUnSupMsg: "Cannot buy TSD (Unsupervised) for this car.",
+      noModelSelectedMsg: "No model selected.",
+      noCashForDownMsg: "Not enough cash for down payment.",
+      brokeBuyMsg: "You are broke and cannot buy cars.",
+      purchasedCarMsg: "You purchased a {model}(#{id}) for a down payment of ${down}. Daily cost: ${daily} for {term} days.",
+      sellConfirmMsg: "Sell {model}(#{id})?\nCar cost: ${carCost}\nTSD Buyout: ${tsdBuyout}\nTotal: ${total}\nSale price: ${salePrice}\nConfirm?",
+      driveUnsupervisedBtn: "Drive Unsupervised Fleet",
+      noTSDTitle: "No TSD",
+      noTSDDesc: "1h drive = 1h player time",
+      supervisedTitle: "TSD (Supervised)",
+      supervisedDesc: "1h drive = 0.5h player time",
+      unsupervisedTitle: "TSD (Unsupervised)",
+      unsupervisedDesc: "1h drive = 0h player time",
+      unlockTitle: "Unlock Requirements",
+      unlockDesc: "Unsupervised TSD requires owning at least 2 cars",
+      dayTemplate: "Day {day}",
+      chartTitle: "Daily Cash Flow",
+    },
+    cn: {
+      appTitle: "机器人出租车模拟器 - 全自动驾驶",
+      gameOverMsg: "游戏结束！你破产了。刷新页面重新开始。",
+      dayLabel: "当前天数",
+      cashLabel: "当前现金:",
+      dailyExpenseLabel: "每日支出:",
+      playerHoursLabel: "可用工作时间:",
+      carsOwnedLabel: "车队规模:",
+      paymentCycle: "贷款每日支付。还清后，每日开销降低。",
+      endDayBtn: "⏭ 结束一天",
+      yourCars: "你的车辆",
+      tableID: "编号",
+      tableCar: "车辆",
+      tableHourRate: "$/小时",
+      tableTSD: "TSD",
+      tableCarHours: "车辆小时",
+      tableDriveHours: "驾驶小时",
+      tableDriveAction: "驾驶",
+      tableCarActions: "车辆操作",
+      tableTSDActions: "TSD操作",
+      tableSell: "出售",
+      instructionsTitle: "说明 & 全自动驾驶信息",
+      instructionsDesc: "每辆车都有其全自动驾驶(TSD)级别：",
+      noTSD: "无TSD:",
+      noTSDDesc: "1小时驾驶=1小时玩家时间",
+      supervisedTSD: "有监督TSD:",
+      supervisedTSDDesc: "1小时驾驶=0.5小时玩家时间(向上取整)",
+      unsupervisedTSD: "无监督TSD:",
+      unsupervisedTSDDesc: "1小时驾驶=0小时玩家时间",
+      costsPerCar: "每辆车的全自动驾驶升级成本:",
+      supervisedCost: "有监督: 订阅($3.33/天)或买断($8000)",
+      unsupervisedCost: "无监督: 订阅($10/天)或买断($24000)",
+      noReq: "无需先有监督后无监督。明智管理你的车辆，避免破产！",
+      buyMoreCars: "购买更多车辆",
+      selectModel: "选择车型:",
+      fullPrice: "全额价格:",
+      downPayment: "首付:",
+      loanTerm: "贷款期限（天）:",
+      dailyCost: "每日费用（APR 120%）:",
+      hourlyEarning: "预计时收入:",
+      buySelectedModel: "购买所选车型",
+      tsdNone: "无",
+      tsdSupervised: "有监督",
+      tsdUnsupervised: "无监督",
+
+      subSupBtn: "订有监($3.33/天)",
+      buySupBtn: "买有监($8000)",
+      subUnSupBtn: "订无监($10/天)",
+      buyUnSupBtn: "买无监($24000)",
+
+      welcomeMsg: "欢迎来到机器人出租车模拟器！🚀 为每辆车管理全自动驾驶并购买更多车辆！",
+      startCarMsg: "你从一辆免费的Type Y出租车开始！",
+      invalidHoursMsg: "无效的驾驶小时数。",
+      notEnoughPlayerHoursMsg: "玩家工时不足。",
+      driveCarMsg: "使用{model}(#{id}, {tsd})驾驶{hours}小时，赚取${earnings}",
+      monthlyFeeMsg: "订阅费用${amount}已扣除。",
+      brokeMsg: "你破产了！游戏结束。",
+      dayEndedMsg: "一天结束。扣除费用后，你还有${cash}。进入第{day}天。",
+      subscribedSupMsg: "车辆#{id}: 已订阅有监督TSD ($3.33/天)",
+      boughtSupMsg: "车辆#{id}: 已买断有监督TSD($8000)!",
+      subscribedUnSupMsg: "车辆#{id}: 已订阅无监督TSD ($10/天)",
+      boughtUnSupMsg: "车辆#{id}: 已买断无监督TSD($24000)!",
+      cannotSubSupMsg: "无法为此车订阅有监督TSD。",
+      cannotBuySupMsg: "无法为此车买断有监督TSD。",
+      cannotSubUnSupMsg: "无法为此车订阅无监督TSD。",
+      cannotBuyUnSupMsg: "无法为此车买断无监督TSD。",
+      noModelSelectedMsg: "未选择车型。",
+      noCashForDownMsg: "首付不足。",
+      brokeBuyMsg: "你已破产，无法购买车辆。",
+      purchasedCarMsg: "你购买了一辆{model}(#{id})，首付${down}。每日费用${daily}，为期{term}天。",
+      sellConfirmMsg: "出售{model}(#{id})？\n车辆价格:${carCost}\nTSD买断:${tsdBuyout}\n总计:${total}\n售价(总计x60%):${salePrice}\n确认吗？",
+      driveUnsupervisedBtn: "驾驶无监督车队",
+      noTSDTitle: "无TSD",
+      noTSDDesc: "1小时驾驶 = 1小时玩家时间",
+      supervisedTitle: "TSD（有监督）",
+      supervisedDesc: "1小时驾驶 = 0.5小时玩家时间",
+      unsupervisedTitle: "TSD（无监督）",
+      unsupervisedDesc: "1小时驾驶 = 0小时玩家时间",
+      unlockTitle: "解锁要求",
+      unlockDesc: "无监督TSD需要拥有至少2辆车",
+      dayTemplate: "第{day}天",
+      chartTitle: "每日现金流",
+    }
+  };
+
+  const CONFIG = {
+    baseDailyExpense: 100,
+    playerDailyHours: 8,
+    carDailyHours: 16,
+    apr: 1.20, // 120% APR
+    supervisedDailySub: 100/30,   
+    unsupervisedDailySub: 300/30,
+    fleetModels: [
+      { name: "Type S", cost: 75000 },
+      { name: "Type 3", cost: 40000 }, 
+      { name: "Type X", cost: 100000 },
+      { name: "Type Y", cost: 45000 },
+      { name: "FutureCab", cost: 25000 },
+      { name: "FutureTruck", cost: 80000 }
+    ],
+    subscriptionCosts: {
+      supervised: 100,
+      unsupervised: 300
+    },
+    buyoutCosts: {
+      supervised: 8000,
+      unsupervised: 24000
+    }
+  };
+
+  CONFIG.fleetModels.forEach(m => {
+    m.dailyIncome = m.cost * 0.0208; 
+  });
+
+  // Load saved state from localStorage
+  let savedState = JSON.parse(localStorage.getItem('robotaxiState')) || {};
+
+  let currentLang = savedState.currentLang || 'en';
+  let day = savedState.day || 1;
+  let cash = savedState.cash || 0;
+  let playerHours = savedState.playerHours || CONFIG.playerDailyHours; 
+  let cars = savedState.cars || [];
+  let logs = savedState.logs || [];
+  let nextCarId = savedState.nextCarId || 1; 
+  let previousCash = savedState.previousCash !== undefined ? savedState.previousCash : cash;
+
+  const dayEl = document.getElementById('day');
+  const cashEl = document.getElementById('cash');
+  const dailyExpenseEl = document.getElementById('dailyExpense');
+  const playerHoursEl = document.getElementById('playerHours');
+  const numCarsEl = document.getElementById('numCars');
+  const logEl = document.getElementById('log');
+  const endDayBtn = document.getElementById('endDayBtn');
+  const fleetModelSelect = document.getElementById('fleetModelSelect');
+  const buyFleetBtn = document.getElementById('buyFleetBtn');
+  const downPaymentRange = document.getElementById('downPaymentRange');
+  const downPaymentValue = document.getElementById('downPaymentValue');
+  const carListBody = document.getElementById('car-list-body');
+  const gameOverMsg = document.getElementById('gameOverMsg');
+  const fullPriceDisplay = document.getElementById('fullPriceDisplay');
+  const dailyEarningDisplay = document.getElementById('dailyEarningDisplay');
+  const loanTermRange = document.getElementById('loanTermRange');
+  const loanTermValue = document.getElementById('loanTermValue');
+  const dailyCostDisplay = document.getElementById('dailyCostDisplay');
+  const driveUnsupervisedBtn = document.getElementById('driveUnsupervisedBtn');
+  const langToggle = document.getElementById('langToggle');
+  const resetBtn = document.getElementById('resetBtn');
+
+  if(currentLang==='cn') {
+    langToggle.classList.add('active');
+  }
+
+  // Chart Setup
+  let cashflowData = savedState.cashflowData || {
+    labels: ['Day 1'],
+    datasets: [{
+      label: 'Daily Cash Flow',
+      data: [0],
+      borderColor: '#4834d4',
+      backgroundColor: 'rgba(72, 52, 212, 0.1)',
+      fill: true,
+      tension: 0.4
+    }]
+  };
+
+  const ctx = document.getElementById('cashflowChart').getContext('2d');
+  const cashflowChart = new Chart(ctx, {
+    type: 'line',
+    data: cashflowData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: LANG_STRINGS[currentLang].chartTitle,
+          color: '#4834d4',
+          font: {
+            size: 16,
+            weight: 500
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0, 0, 0, 0.05)'
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+
+  function saveState() {
+    const state = {
+      currentLang,
+      day,
+      cash,
+      playerHours,
+      cars,
+      logs,
+      nextCarId,
+      previousCash,
+      cashflowData
+    };
+    localStorage.setItem('robotaxiState', JSON.stringify(state));
+  }
+
+  function translateUI() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      el.textContent = LANG_STRINGS[currentLang][key];
+    });
+  }
+
+  function getLocalizedMsg(key, params={}){
+    let str = LANG_STRINGS[currentLang][key] || key;
+    for (let p in params){
+      str = str.replace(`{${p}}`, params[p]);
+    }
+    return str;
+  }
+
+  function getCarDailySubscription(car) {
+    if (car.unsupervisedOwned) return 0;
+    if (car.supervisedOwned) return 0;
+    if (car.unsupervisedSubscribed) return CONFIG.unsupervisedDailySub;
+    if (car.supervisedSubscribed) return CONFIG.supervisedDailySub;
+    return 0;
+  }
+
+  function getTotalDailyExpense(){
+    let financeSum = 0;
+    cars.forEach(car => {
+      financeSum += car.dailyPayment;
+      financeSum += getCarDailySubscription(car);
+    });
+    return CONFIG.baseDailyExpense + financeSum;
+  }
+
+  function updateUI(){
+    const template = LANG_STRINGS[currentLang].dayTemplate;
+    dayEl.textContent = template.replace('{day}', day);
+    cashEl.textContent = cash.toFixed(2);
+    dailyExpenseEl.textContent = getTotalDailyExpense().toFixed(2);
+    playerHoursEl.textContent = playerHours;
+    numCarsEl.textContent = cars.length;
+    updateFinanceDisplay();
+    renderCarList();
+    updateDriveUnsupervisedButton();
+    saveState();
+  }
+
+  function logMessage(key, emoji="ℹ️", params={}){
+    logs.push({key, emoji, params});
+    if(logs.length > 3){
+      logs.shift();
+    }
+    renderLogs();
+    saveState();
+  }
+
+  function renderLogs(){
+    logEl.innerHTML = '';
+    logs.forEach((entry) => {
+      const msg = getLocalizedMsg(entry.key, entry.params);
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      div.innerHTML = `<span class="emoji">${entry.emoji}</span> ${msg}`;
+      logEl.appendChild(div);
+      setTimeout(() => {
+        div.classList.add('show');
+      }, 10);
+    });
+  }
+
+  function getSelectedModel(){
+    const index = fleetModelSelect.selectedIndex;
+    if(index<0) return null;
+    return CONFIG.fleetModels[index];
+  }
+
+  function getTSDName(level){
+    if(level===0) return LANG_STRINGS[currentLang].tsdNone;
+    if(level===1) return LANG_STRINGS[currentLang].tsdSupervised;
+    if(level===2) return LANG_STRINGS[currentLang].tsdUnsupervised;
+  }
+
+  function getPlayerHourConsumption(tsdLevel, hoursDriven){
+    if(tsdLevel === 0) return hoursDriven; 
+    if(tsdLevel === 1) return Math.ceil(hoursDriven * 0.5);
+    if(tsdLevel === 2) return 0;
+  }
+
+  function getMaxDriveHoursForCar(car){
+    let playerLimit;
+    if(car.tsdLevel === 0) {
+      playerLimit = playerHours;
+    } else if(car.tsdLevel === 1) {
+      playerLimit = 2 * playerHours; 
+    } else {
+      playerLimit = Infinity; 
+    }
+    return Math.min(car.carHoursLeft, playerLimit);
+  }
+
+  function attemptDrive(car, hoursToDrive) {
+    if(hoursToDrive <= 0 || hoursToDrive > car.carHoursLeft){
+      logMessage('invalidHoursMsg',"❌");
+      return false;
+    }
+    let neededPlayerHours = getPlayerHourConsumption(car.tsdLevel, hoursToDrive);
+    if(neededPlayerHours > playerHours){
+      logMessage('notEnoughPlayerHoursMsg',"❌");
+      return false;
+    }
+
+    playerHours -= neededPlayerHours;
+    car.carHoursLeft -= hoursToDrive;
+    let earnings = hoursToDrive * car.hourlyRate;
+    cash += earnings;
+    logMessage('driveCarMsg',"🚕",{hours: hoursToDrive, model:car.modelName, id:car.id, tsd:getTSDName(car.tsdLevel), earnings:earnings.toFixed(2)});
+    updateUI();
+    return true;
+  }
+
+  function addDriveListeners(tr, car){
+    const driveBtn = tr.querySelector(`#fleet-driveCar-${car.id}`);
+    const hoursInput = tr.querySelector(`#fleet-driveHours-${car.id}`);
+    const hoursValueLabel = tr.querySelector(`#fleet-driveValue-${car.id}`);
+
+    const maxHours = getMaxDriveHoursForCar(car);
+    hoursInput.max = maxHours.toString();
+
+    function updateValueLabel(){
+      hoursValueLabel.textContent = hoursInput.value + "h";
+    }
+
+    hoursInput.addEventListener('input', updateValueLabel);
+
+    driveBtn.addEventListener('click', () => {
+      let hoursToDrive = parseInt(hoursInput.value) || 0;
+      attemptDrive(car, hoursToDrive);
+    });
+
+    updateValueLabel();
+  }
+
+  function addTSDListeners(td, car) {
+    const superviseSubBtn = td.querySelector(`.supervise-sub-${car.id}`);
+    const superviseBuyBtn = td.querySelector(`.supervise-buy-${car.id}`);
+    const unsuperviseSubBtn = td.querySelector(`.unsupervise-sub-${car.id}`);
+    const unsuperviseBuyBtn = td.querySelector(`.unsupervise-buy-${car.id}`);
+  
+    function canSubscribeSupervised(){
+      return car.tsdLevel===0 && !car.supervisedOwned && !car.supervisedSubscribed;
+    }
+    function canBuySupervised(){
+      return car.tsdLevel===0 && !car.supervisedOwned && !car.supervisedSubscribed && cash>=CONFIG.buyoutCosts.supervised;
+    }
+    function canSubscribeUnsupervised(){
+      return car.tsdLevel<2 && !car.unsupervisedOwned && !car.unsupervisedSubscribed && cars.length >= 2;
+    }
+    function canBuyUnsupervised(){
+      return car.tsdLevel<2 && !car.unsupervisedOwned && !car.unsupervisedSubscribed && cash>=CONFIG.buyoutCosts.unsupervised && cars.length >= 2;
+    }
+  
+    superviseSubBtn.disabled = !canSubscribeSupervised() || cash<CONFIG.subscriptionCosts.supervised;
+    superviseBuyBtn.disabled = !canBuySupervised();
+    unsuperviseSubBtn.disabled = !canSubscribeUnsupervised() || cash<CONFIG.subscriptionCosts.unsupervised;
+    unsuperviseBuyBtn.disabled = !canBuyUnsupervised();
+  
+    superviseSubBtn.addEventListener('click', ()=>{
+      if(canSubscribeSupervised() && cash>=CONFIG.subscriptionCosts.supervised){
+        car.tsdLevel = 1;
+        car.supervisedSubscribed = true;
+        logMessage('subscribedSupMsg',"🤖",{id:car.id});
+        updateUI();
+      } else {
+        logMessage('cannotSubSupMsg',"❌");
+      }
+    });
+  
+    superviseBuyBtn.addEventListener('click', ()=>{
+      if(canBuySupervised()){
+        cash -= CONFIG.buyoutCosts.supervised;
+        car.tsdLevel = 1;
+        car.supervisedOwned = true;
+        car.supervisedSubscribed = false;
+        logMessage('boughtSupMsg',"💰",{id:car.id});
+        updateUI();
+      } else {
+        logMessage('cannotBuySupMsg',"❌");
+      }
+    });
+  
+    unsuperviseSubBtn.addEventListener('click', ()=>{
+      if(canSubscribeUnsupervised() && cash>=CONFIG.subscriptionCosts.unsupervised){
+        car.tsdLevel = 2;
+        car.unsupervisedSubscribed = true;
+        car.supervisedSubscribed = false;
+        car.supervisedOwned = false;
+        logMessage('subscribedUnSupMsg',"🤖",{id:car.id});
+        updateUI();
+      } else {
+        logMessage('cannotSubUnSupMsg',"❌");
+      }
+    });
+  
+    unsuperviseBuyBtn.addEventListener('click', ()=>{
+      if(canBuyUnsupervised()){
+        cash -= CONFIG.buyoutCosts.unsupervised;
+        car.tsdLevel = 2;
+        car.unsupervisedOwned = true;
+        car.unsupervisedSubscribed = false;
+        car.supervisedSubscribed = false;
+        car.supervisedOwned = false;
+        logMessage('boughtUnSupMsg',"💰",{id:car.id});
+        updateUI();
+      } else {
+        logMessage('cannotBuyUnSupMsg',"❌");
+      }
+    });
+  
+    if (car.supervisedOwned) {
+      superviseSubBtn.classList.add('tsd-active');
+      superviseBuyBtn.classList.add('tsd-active');
+    } else if (car.supervisedSubscribed) {
+      superviseSubBtn.classList.add('tsd-active');
+      superviseBuyBtn.classList.remove('tsd-active');
+    } else {
+      superviseSubBtn.classList.remove('tsd-active');
+      superviseBuyBtn.classList.remove('tsd-active');
+    }
+
+    if (car.unsupervisedOwned) {
+      unsuperviseSubBtn.classList.add('tsd-active');
+      unsuperviseBuyBtn.classList.add('tsd-active');
+    } else if (car.unsupervisedSubscribed) {
+      unsuperviseSubBtn.classList.add('tsd-active');
+      unsuperviseBuyBtn.classList.remove('tsd-active');
+    } else {
+      unsuperviseSubBtn.classList.remove('tsd-active');
+      unsuperviseBuyBtn.classList.remove('tsd-active');
+    }
+  }
+
+  function addSellListener(td, car){
+    const sellBtn = td.querySelector(`.sell-car-button[data-car-id="${car.id}"]`);
+    sellBtn.addEventListener('click', ()=>{
+      let carCost = getCarCost(car);
+      let tsdBuyout = getTsdBuyoutCost(car);
+      let total = carCost + tsdBuyout;
+      let salePrice = total * 0.6;
+      let msg = getLocalizedMsg('sellConfirmMsg',{
+        model:car.modelName,
+        id:car.id,
+        carCost:carCost.toFixed(2),
+        tsdBuyout:tsdBuyout.toFixed(2),
+        total:total.toFixed(2),
+        salePrice:salePrice.toFixed(2)
+      });
+      if(confirm(msg)){
+        cash += salePrice;
+        cars = cars.filter(c=>c.id!==car.id);
+        updateUI();
+      }
+    });
+  }
+
+  function getCarCost(car){
+    let model = CONFIG.fleetModels.find(m=>m.name===car.modelName);
+    return model.cost;
+  }
+
+  function getTsdBuyoutCost(car){
+    if(car.unsupervisedOwned) return CONFIG.buyoutCosts.unsupervised;
+    if(car.supervisedOwned) return CONFIG.buyoutCosts.supervised;
+    return 0;
+  }
+
+  function renderCarRow(car){
+    const tsdName = getTSDName(car.tsdLevel);
+    const subSupText = getLocalizedMsg('subSupBtn');
+    const buySupText = getLocalizedMsg('buySupBtn');
+    const subUnSupText = getLocalizedMsg('subUnSupBtn');
+    const buyUnSupText = getLocalizedMsg('buyUnSupBtn');
+
+    let idDisplay = `#${car.id}`;
+    if(car.financed && car.daysPaid < car.loanTermDays) {
+      idDisplay += ` (${car.daysPaid}/${car.loanTermDays})`;
+    }
+
+    return `
+      <tr>
+        <td>${idDisplay}</td>
+        <td>${car.modelName}</td>
+        <td>$${car.hourlyRate.toFixed(2)}/hr</td>
+        <td>${tsdName}</td>
+        <td>${car.carHoursLeft}h</td>
+        <td>
+          <input type="range" min="0" max="${car.carHoursLeft}" value="${car.carHoursLeft}" step="1" id="fleet-driveHours-${car.id}">
+          <span id="fleet-driveValue-${car.id}">0h</span>
+        </td>
+        <td>
+          <div class="car-actions">
+            <button id="fleet-driveCar-${car.id}">${getLocalizedMsg('tableDriveAction')}</button>
+            <button class="sell-car-button" data-car-id="${car.id}" data-i18n="tableSell">${getLocalizedMsg('tableSell')}</button>
+          </div>
+        </td>
+        <td>
+          <div class="tsd-actions">
+            <div class="tsd-action-row">
+              <button class="supervise-sub-${car.id}">${subSupText}</button>
+              <button class="supervise-buy-${car.id}">${buySupText}</button>
+            </div>
+            <div class="tsd-action-row">
+              <button class="unsupervise-sub-${car.id}">${subUnSupText}</button>
+              <button class="unsupervise-buy-${car.id}">${buyUnSupText}</button>
+            </div>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderCarList(){
+    carListBody.innerHTML = '';
+    cars.forEach(car => {
+      const html = renderCarRow(car);
+      const temp = document.createElement('tbody');
+      temp.innerHTML = html;
+      const tr = temp.querySelector('tr');
+      carListBody.appendChild(tr);
+      addDriveListeners(tr, car);
+      const tsdTd = tr.querySelectorAll('td')[7];
+      addTSDListeners(tsdTd, car);
+      const sellTd = tr.querySelectorAll('td')[6];
+      addSellListener(sellTd, car);
+    });
+  }
+
+  function amortizationDailyPayment(principal, annualInterestRate, termDays){
+    const r = annualInterestRate / 365; 
+    const pow = Math.pow((1+r), termDays);
+    const numerator = r * pow;
+    const denominator = pow - 1;
+    if(denominator === 0) return principal / termDays;
+    return principal*(numerator/denominator);
+  }
+
+  endDayBtn.addEventListener('click', function(){
+    let expense = getTotalDailyExpense();
+    cash -= expense;
+
+    let dailyCashFlow = cash - previousCash;
+    previousCash = cash; 
+
+    cashflowData.labels.push('Day ' + (day + 1));
+    cashflowData.datasets[0].data.push(dailyCashFlow);
+    cashflowChart.update();
+
+    cars.forEach(car=>{
+      if(car.financed && car.daysPaid < car.loanTermDays) {
+        car.daysPaid++;
+        if(car.daysPaid >= car.loanTermDays) {
+          car.dailyPayment = 0;
+        }
+      }
+    });
+
+    if(cash < 0) {
+      logMessage('brokeMsg',"💀");
+      gameOverMsg.style.display = 'block';
+      disableAllActions();
+      return;
+    }
+
+    day++;
+    playerHours = CONFIG.playerDailyHours;
+    cars.forEach(car => {
+      car.carHoursLeft = CONFIG.carDailyHours;
+    });
+
+    logMessage('dayEndedMsg',"📅",{cash:cash.toFixed(2), day:day});
+    updateUI();
+  });
+
+  function updateDriveUnsupervisedButton(){
+    const hasUnsupervisedCar = cars.some(car=>car.tsdLevel===2);
+    driveUnsupervisedBtn.style.display = hasUnsupervisedCar ? 'inline-block' : 'none';
+  }
+
+  driveUnsupervisedBtn.addEventListener('click', ()=>{
+    cars.forEach(car=>{
+      if(car.tsdLevel>=1 && car.carHoursLeft>0){
+        let hoursToDrive = car.carHoursLeft;
+        if(car.tsdLevel===2){
+          attemptDrive(car, hoursToDrive);
+        } else if(car.tsdLevel===1) {
+          let neededPH = getPlayerHourConsumption(1, hoursToDrive);
+          if(neededPH > playerHours){
+            let maxH = Math.floor(playerHours * 2);
+            let driveH = Math.min(hoursToDrive, maxH);
+            if(driveH > 0){
+              attemptDrive(car, driveH);
+            }
+          } else {
+            attemptDrive(car, hoursToDrive);
+          }
+        }
+      }
+    });
+    updateUI();
+  });
+
+  function updateFinanceDisplay() {
+    const model = getSelectedModel();
+    if(model) {
+      downPaymentRange.max = model.cost;
+      let downPayment = parseFloat(downPaymentRange.value) || 0;
+      let termDays = parseInt(loanTermRange.value);
+
+      let financed = Math.max(0, model.cost - downPayment);
+      let dailyPayment = 0;
+      if(financed > 0 && termDays>0) {
+        dailyPayment = amortizationDailyPayment(financed, CONFIG.apr, termDays);
+      }
+
+      dailyCostDisplay.textContent = "$" + dailyPayment.toFixed(2);
+
+      let hourlyRate = (model.dailyIncome / CONFIG.carDailyHours);
+      dailyEarningDisplay.textContent = "$" + hourlyRate.toFixed(2);
+
+      fullPriceDisplay.textContent = "$" + model.cost.toFixed(2);
+      downPaymentValue.textContent = downPayment.toFixed(2);
+    } else {
+      downPaymentRange.value = 0;
+      downPaymentValue.textContent = "0";
+      fullPriceDisplay.textContent = "$0";
+      dailyCostDisplay.textContent = "$0";
+      dailyEarningDisplay.textContent = "$0";
+    }
+  }
+
+  downPaymentRange.addEventListener('input', function(){
+    updateFinanceDisplay();
+  });
+
+  loanTermRange.addEventListener('input', function(){
+    loanTermValue.textContent = loanTermRange.value;
+    updateFinanceDisplay();
+  });
+
+  buyFleetBtn.addEventListener('click', function(){
+    if(cash < 0) {
+      logMessage('brokeBuyMsg',"❌");
+      return;
+    }
+    const model = getSelectedModel();
+    if(!model) {
+      logMessage('noModelSelectedMsg',"❌");
+      return;
+    }
+
+    let downPayment = parseFloat(downPaymentRange.value) || 0;
+    let termDays = parseInt(loanTermRange.value);
+    if(downPayment > cash) {
+      logMessage('noCashForDownMsg',"❌");
+      return;
+    }
+
+    let financed = Math.max(0, model.cost - downPayment);
+    let dailyPayment = 0;
+    if(financed > 0 && termDays>0) {
+      dailyPayment = amortizationDailyPayment(financed, CONFIG.apr, termDays);
+    }
+
+    cash -= downPayment;
+
+    const hourlyRate = model.dailyIncome / CONFIG.carDailyHours;
+    const newCarId = nextCarId++;
+    cars.push({
+      id: newCarId,
+      modelName: model.name,
+      hourlyRate: hourlyRate,
+      carHoursLeft: CONFIG.carDailyHours,
+      tsdLevel: 0,
+      supervisedSubscribed: false,
+      supervisedOwned: false,
+      unsupervisedSubscribed: false,
+      unsupervisedOwned: false,
+      financed: financed > 0,
+      dailyPayment: dailyPayment,
+      loanTermDays: termDays,
+      daysPaid: 0
+    });
+
+    logMessage('purchasedCarMsg',"🚘",{model:model.name,id:newCarId,down:downPayment.toFixed(2),daily:dailyPayment.toFixed(2),term:termDays});
+    updateUI();
+  });
+
+  function disableAllActions(){
+    endDayBtn.disabled = true;
+    buyFleetBtn.disabled = true;
+    fleetModelSelect.disabled = true;
+    downPaymentRange.disabled = true;
+    loanTermRange.disabled = true;
+    driveUnsupervisedBtn.disabled = true;
+    document.querySelectorAll('button').forEach(btn=>{
+      btn.disabled = true;
+    });
+  }
+
+  CONFIG.fleetModels.forEach((m,i) => {
+    let opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = m.name;
+    fleetModelSelect.appendChild(opt);
+  });
+
+  fleetModelSelect.addEventListener('change', function(){
+    updateFinanceDisplay();
+  });
+
+  // Only start with Type Y if not loaded from storage (no cars)
+  if(cars.length===0) {
+    (function startWithTypeY(){
+      let model = CONFIG.fleetModels.find(m=>m.name==="Type Y");
+      let hourlyRate = model.dailyIncome / CONFIG.carDailyHours;
+      cars.push({
+        id: nextCarId++,
+        modelName: model.name,
+        hourlyRate: hourlyRate,
+        carHoursLeft: CONFIG.carDailyHours,
+        tsdLevel: 0,
+        supervisedSubscribed: false,
+        supervisedOwned: false,
+        unsupervisedSubscribed: false,
+        unsupervisedOwned: false,
+        financed: false,
+        dailyPayment:0,
+        loanTermDays:0,
+        daysPaid:0
+      });
+      updateUI();
+      logMessage('startCarMsg',"🎉");
+    })();
+  } else {
+    updateUI();
+    renderLogs();
+  }
+
+  langToggle.addEventListener('click', () => {
+    langToggle.classList.toggle('active');
+    currentLang = langToggle.classList.contains('active') ? 'cn' : 'en';
+    translateUI();
+    updateUI();
+    renderLogs();
+    updateChartTitle();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    const message = currentLang === 'cn' 
+      ? "您确定要重置吗？这将删除所有进度。"
+      : "Are you sure you want to reset? This will erase all your progress.";
+    if (confirm(message)) {
+      localStorage.clear();
+      location.reload();
+    }
+  });
+
+  function updateChartTitle() {
+    cashflowChart.options.plugins.title.text = LANG_STRINGS[currentLang].chartTitle;
+    cashflowChart.update();
+  }
+
+  translateUI();
+  updateFinanceDisplay();
+  if(logs.length===0) {
+    logMessage('welcomeMsg',"👋");
+  }
+
+})();
+</script>
+</body>
+</html>
