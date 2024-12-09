@@ -6,6 +6,15 @@
   <title>Robotaxi Simulator - Totally Self-Driving</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YWK987RB6M"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-YWK987RB6M');
+  </script>
 </head>
 <body>
 <header>
@@ -629,6 +638,12 @@
       if(canSubscribeSupervised() && cash>=CONFIG.subscriptionCosts.supervised){
         car.tsdLevel = 1;
         car.supervisedSubscribed = true;
+        gtag('event', 'tsd_upgrade', {
+          car_id: car.id,
+          old_tsd: 'none',
+          new_tsd: 'supervised',
+          upgrade_type: 'subscription'
+        });
         logMessage('subscribedSupMsg',"🤖",{id:car.id});
         updateUI();
       } else {
@@ -642,6 +657,13 @@
         car.tsdLevel = 1;
         car.supervisedOwned = true;
         car.supervisedSubscribed = false;
+        gtag('event', 'tsd_upgrade', {
+          car_id: car.id,
+          old_tsd: 'none',
+          new_tsd: 'supervised',
+          upgrade_type: 'buyout',
+          cost: CONFIG.buyoutCosts.supervised
+        });
         logMessage('boughtSupMsg',"💰",{id:car.id});
         updateUI();
       } else {
@@ -837,6 +859,13 @@
       car.carHoursLeft = CONFIG.carDailyHours;
     });
 
+    gtag('event', 'end_day', {
+      day: day,
+      remaining_cash: cash,
+      cars_owned: cars.length,
+      daily_cashflow: dailyCashFlow
+    });
+
     logMessage('dayEndedMsg',"📅",{cash:cash.toFixed(2), day:day});
     updateUI();
   });
@@ -951,11 +980,24 @@
       daysPaid: 0
     });
 
+    gtag('event', 'purchase_car', {
+      model: model.name,
+      cost: model.cost,
+      down_payment: downPayment,
+      term_days: termDays
+    });
+
     logMessage('purchasedCarMsg',"🚘",{model:model.name,id:newCarId,down:downPayment.toFixed(2),daily:dailyPayment.toFixed(2),term:termDays});
     updateUI();
   });
 
   function disableAllActions(){
+    gtag('event', 'game_over', {
+      final_day: day,
+      final_cash: cash,
+      cars_owned: cars.length
+    });
+
     endDayBtn.disabled = true;
     buyFleetBtn.disabled = true;
     fleetModelSelect.disabled = true;
@@ -1009,6 +1051,9 @@
   langToggle.addEventListener('click', () => {
     langToggle.classList.toggle('active');
     currentLang = langToggle.classList.contains('active') ? 'cn' : 'en';
+    gtag('event', 'language_change', {
+      language: currentLang
+    });
     translateUI();
     updateUI();
     renderLogs();
