@@ -11,7 +11,7 @@ body {
 header {
   background: linear-gradient(to right, #4834d4, #686de0);
   color: #fff;
-  padding: 15px;
+  padding: 12px;
   text-align: center;
   box-shadow: 0 4px 15px rgba(0,0,0,0.15);
   position: sticky;
@@ -19,13 +19,14 @@ header {
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
 @media (min-width: 768px) {
   header {
     flex-direction: row;
     padding: 15px 25px;
+    gap: 15px;
   }
 }
 
@@ -34,14 +35,31 @@ header h1 {
   font-weight: 300;
   display: flex;
   align-items: center;
-  font-size: 1.5em;
+  font-size: 1.2em;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  header h1 {
+    font-size: 1.5em;
+    justify-content: flex-start;
+  }
 }
 
 header svg {
-  width: 40px;
-  height: 40px;
-  margin-right: 10px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  header svg {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+  }
 }
 
 main {
@@ -178,7 +196,7 @@ input[type=range]:focus {
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   border: 1px solid rgba(255, 255, 255, 0.8);
   height: 200px;
-  width: 100%;
+  width: 90%;
 }
 
 #log {
@@ -245,8 +263,16 @@ input[type=range]:focus {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
-  padding-left: 20px;
+  justify-content: center;
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  .lang-toggle-container {
+    margin-left: auto;
+    padding-left: 20px;
+    justify-content: flex-end;
+  }
 }
 
 .lang-label {
@@ -404,6 +430,8 @@ select:focus, input[type=text]:focus {
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   margin-bottom: 30px;
+  margin-right: 10px;
+  margin-left: 10px;
 }
 
 @media (min-width: 768px) {
@@ -884,7 +912,7 @@ input[id^="fleet-driveHours"] {
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   border: 1px solid rgba(255, 255, 255, 0.8);
   height: 200px;
-  width: 100%;
+  width: 90%;
 }
 
 /* Add smooth scrolling for iOS */
@@ -1293,4 +1321,124 @@ thead {
 @keyframes celebrate {
   0% { transform: scale(0.8); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+/* 确保所有内容在移动端不横向溢出 */
+html, body {
+  overflow-x: hidden;
+}
+
+
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+/* 当屏幕大于等于992px宽度时变为两列布局 */
+@media (min-width: 992px) {
+  .dashboard-container {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .dashboard-container .log-bar-container,
+  .dashboard-container .chart-container {
+    width: 48%;
+    box-sizing: border-box;
+  }
+}
+
+/* panels-container在窄屏时为单列, 不出现横向滚动 */
+.panels-container {
+  grid-template-columns: 1fr;
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 10px;
+}
+
+/* panel在小屏幕下自动适应宽度，不超出屏幕宽度 */
+.panel {
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 在1200px宽度以上才使用原有布局 */
+@media (min-width: 1200px) {
+  .panels-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+  }
+
+  /* 保持第一个panel占满宽度逻辑不变（如有需要可调整） */
+  .panels-container > .panel:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .panels-container > .panel.full-width {
+    grid-column: 1 / -1;
+  }
+}
+
+/* insurance在窄屏下改为单列 */
+.insurance-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+  margin: 20px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 在中等屏幕下可尝试两列（根据需要调整断点） */
+@media (min-width: 768px) and (max-width: 1399px) {
+  .insurance-container {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* 在1400px及以上为两列 */
+@media (min-width: 1400px) {
+  .insurance-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 确保panel内的元素不会因为padding和margin导致横向滚动 */
+.panel {
+  overflow-x: hidden;
+}
+
+/* 可以根据需要在max-width:767px下，进一步缩小panel的内边距，避免溢出 */
+@media (max-width: 767px) {
+  .panel {
+    padding: 15px;
+  }
+  .instructions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 确保table-container不要强制背景滚动导致横向滚动条出现 */
+/* 已有相关代码，此处无需重复，但如果有需要，可以增加以下代码 */
+/*
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+*/
+
+/* 如果需要，确保cars-header在小屏下不超出屏幕 */
+.cars-header {
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
