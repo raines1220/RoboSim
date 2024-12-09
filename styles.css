@@ -1532,3 +1532,32 @@ html, body {
   border-color: #4834d4;
   outline: none;
 }
+
+.swipe-hint {
+  display: none;
+  font-size: 0.8em;
+  color: #666;
+  margin-left: 10px;
+  animation: fadeInOut 2s infinite;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+/* Only show swipe hint on mobile */
+@media (max-width: 1024px) {
+  .swipe-hint {
+    display: inline-block;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  
+  .cars-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+}
