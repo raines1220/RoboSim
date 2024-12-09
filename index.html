@@ -32,7 +32,7 @@
     <span class="lang-label">EN</span>
     <div class="lang-toggle" id="langToggle"></div>
     <span class="lang-label">CN</span>
-    <button id="resetBtn" style="margin-left:10px; background:#ff6b6b;">Reset</button>
+    <button id="resetBtn" style="margin-left:10px; background:#ff6b6b;" data-i18n="resetBtn">Reset</button>
   </div>
 </header>
 
@@ -455,6 +455,8 @@
       tsdConfigSubUnsupervised: "Subscribe Unsupervised ($10/day)",
       tsdConfigBuySupervised: "Buy Supervised ($8000)",
       tsdConfigBuyUnsupervised: "Buy Unsupervised ($24000)",
+      resetBtn: "Reset",
+      resetConfirm: "Are you sure you want to reset? All progress will be lost.",
     },
     cn: {
       appTitle: "机器人出租车模拟器 - 全自动驾驶",
@@ -599,6 +601,8 @@
       tsdConfigSubUnsupervised: "订阅无监督模式 ($10/天)",
       tsdConfigBuySupervised: "购买监督模式 ($8000)",
       tsdConfigBuyUnsupervised: "购买无监督模式 ($24000)",
+      resetBtn: "重置",
+      resetConfirm: "确定要重置游戏吗？所有进度将被清除。",
     }
   };
 
@@ -809,6 +813,9 @@
         el.textContent = LANG_STRINGS[currentLang][key];
       }
     });
+    
+    // Add translation for reset button
+    resetBtn.textContent = LANG_STRINGS[currentLang].resetBtn;
   }
 
   function getLocalizedMsg(key, params={}){
@@ -1688,10 +1695,16 @@ ${getLocalizedMsg('finalSellingPrice')}: $${salePrice.toFixed(2)}
   });
 
   resetBtn.addEventListener('click', () => {
-    const message = currentLang === 'cn' 
-      ? "您确定要重置吗？这将删除所有进度。"
-      : "Are you sure you want to reset? This will erase all your progress.";
-    if (confirm(message)) {
+    const confirmMsg = currentLang === 'cn' 
+      ? "确定要重置游戏吗？所有进度将被清除。" 
+      : "Are you sure you want to reset? All progress will be lost.";
+    
+    if (confirm(confirmMsg)) {
+      gtag('event', 'reset_game', {
+        final_day: day,
+        final_cash: cash,
+        cars_owned: cars.length
+      });
       localStorage.clear();
       location.reload();
     }
@@ -1703,7 +1716,16 @@ ${getLocalizedMsg('finalSellingPrice')}: $${salePrice.toFixed(2)}
   }
 
   translateUI();
+  updateUI();
   updateFinanceDisplay();
+  renderCarList();
+
+  if (currentLang === 'cn') {
+    langToggle.classList.add('active');
+  } else {
+    langToggle.classList.remove('active');
+  }
+
   if(logs.length===0) {
     logMessage('welcomeChallenge',"👋");
   }
