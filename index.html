@@ -1095,14 +1095,21 @@
   }
 
   function getCarPaidSoFar(car) {
-    let totalPaid = 0;
-    totalPaid += (car.downPayment || 0);
-    totalPaid += (car.daysPaid || 0) * (car.dailyPayment || 0);
     let tsdBuyoutPaid = 0;
     if (car.supervisedOwned) tsdBuyoutPaid += CONFIG.buyoutCosts.supervised;
     if (car.unsupervisedOwned) tsdBuyoutPaid += CONFIG.buyoutCosts.unsupervised;
-    totalPaid += tsdBuyoutPaid;
-    return { totalPaid, tsdBuyoutPaid };
+
+    // If loan is fully paid off, totalPaid should equal the full original cost + TSD buyouts
+    if (car.financed && car.daysPaid >= car.loanTermDays) {
+      return { totalPaid: car.originalCost + tsdBuyoutPaid, tsdBuyoutPaid };
+    } else {
+      // Not fully paid off yet, so calculate incrementally
+      let totalPaid = 0;
+      totalPaid += (car.downPayment || 0);
+      totalPaid += (car.daysPaid || 0) * (car.dailyPayment || 0);
+      totalPaid += tsdBuyoutPaid;
+      return { totalPaid, tsdBuyoutPaid };
+    }
   }
 
   function addSellListener(td, car){
@@ -1112,14 +1119,12 @@
       let loanPaid = (car.daysPaid || 0) * (car.dailyPayment || 0);
       let downPaid = car.downPayment || 0;
       let discountRate = 0.6;
+      if(!car.financed || car.daysPaid >= car.loanTermDays){
+        discountRate = 0.7; // Reduced discount rate by 10%
+      }
       let salePrice = totalPaid * discountRate;
 
       let message = `${car.modelName} (#${car.id})
-------------------------------
-${getLocalizedMsg('originalDownPayment')}: $${downPaid.toFixed(2)}
-${getLocalizedMsg('tsdPayments')}: $${tsdBuyoutPaid.toFixed(2)}
-${getLocalizedMsg('loanPaidSoFar')}: $${loanPaid.toFixed(2)}
-${getLocalizedMsg('discountRate')}: ${Math.round(discountRate*100)}%
 ------------------------------
 ${getLocalizedMsg('finalSellingPrice')}: $${salePrice.toFixed(2)}
 `;
